@@ -1,0 +1,3 @@
+[submodule "map-macro"]
+	path = map-macro
+	url = https://github.com/swansontec/map-macro
