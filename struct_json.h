@@ -21,7 +21,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "map.h"
+#include "map-macro/map.h"
 
 struct int_list
 {
