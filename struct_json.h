@@ -171,103 +171,103 @@ extern size_t __string_list_string_length(struct string_list list);
 #define __json_STRING_LENGTH_OF_ATTRIBUTE(attr) __length += strlen(__src->attr);
 
 #define __int_list_STRING_LENGTH_OF_ATTRIBUTE(attr) __length += __int_list_string_length(__src->attr);
-#define __bool_list_STRING_LENGTH_OF_ATTRIBUTE(attr) __length += 2 + 6 * __src->length;
+#define __bool_list_STRING_LENGTH_OF_ATTRIBUTE(attr) __length += 2 + 6 * __src->attr.length;
 #define __float_list_STRING_LENGTH_OF_ATTRIBUTE(attr) __length += __float_list_string_length(__src->attr);
-#define __string_list_STRING_LENGTH_OF_ATTRIBUTE(attr) __length += __json_list_string_length(__src->attr);
-#define __json_list_STRING_LENGTH_OF_ATTRIBUTE(attr) __length += __string_list_string_length(__src->attr);
+#define __string_list_STRING_LENGTH_OF_ATTRIBUTE(attr) __length += __string_list_string_length(__src->attr);
+#define __json_list_STRING_LENGTH_OF_ATTRIBUTE(attr) __length += __json_list_string_length(__src->attr);
 
 #define __PUT_int_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":%d,", __dst, #attr, __src->attr);\
+	__buf += sprintf(__buf,"\"%s\":%d,", #attr, __src->attr);\
 }
 
 #define __PUT_float_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":%f,", __dst, #attr, __src->attr);\
+	__buf += sprintf(__buf,"\"%s\":%f,", #attr, __src->attr);\
 }
 
 #define __PUT_bool_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":%s,", __dst, #attr, (__src->attr)? "true" : "false");\
+	__buf += sprintf(__buf,"\"%s\":%s,", #attr, (__src->attr)? "true" : "false");\
 }
 
 #define __PUT_string_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":\"%s\",", __dst, #attr, __src->attr);\
+	__buf += sprintf(__buf,"\"%s\":\"%s\",", #attr, __src->attr);\
 }
 
 #define __PUT_json_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":%s,", __dst, #attr, __src->attr);\
+	__buf += sprintf(__buf,"\"%s\":%s,", #attr, __src->attr);\
 }
 //------------------------------------------------------------
 #define __PUT_int_list_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":",__dst,#attr);\
+	__buf += sprintf(__buf,"\"%s\":",#attr);\
 	if (__src->attr.length == 0){\
-		sprintf(__dst,"%s[],",__dst);\
+		__buf += sprintf(__buf,"[],");\
 	}\
 	else{\
-		sprintf(__dst,"%s[",__dst);\
+		__buf += sprintf(__buf,"[");\
 		int __i = 0;\
 		for (; __i < __src->attr.length - 1; __i++){\
-			sprintf(__dst,"%s%d,",__dst,__src->attr.list[__i]);\
+			__buf += sprintf(__buf,"%d,",__src->attr.list[__i]);\
 		}\
-		sprintf(__dst,"%s%d],",__dst,__src->attr.list[__i]);\
+		__buf += sprintf(__buf,"%d],",__src->attr.list[__i]);\
     }\
 }
 
 #define __PUT_float_list_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":",__dst,#attr);\
+	__buf += sprintf(__buf,"\"%s\":",#attr);\
 	if (__src->attr.length == 0){\
-		sprintf(__dst,"%s[],",__dst);\
+		__buf += sprintf(__buf,"[],");\
 	}\
 	else{\
-		sprintf(__dst,"%s[",__dst);\
+		__buf += sprintf(__buf,"[");\
 		int __i = 0;\
 		for (; __i < __src->attr.length - 1; __i++){\
-			sprintf(__dst,"%s%f,",__dst,__src->attr.list[__i]);\
+			__buf += sprintf(__buf,"%f,",__src->attr.list[__i]);\
 		}\
-		sprintf(__dst,"%s%f],",__dst,__src->attr.list[__i]);\
+		__buf += sprintf(__buf,"%f],",__src->attr.list[__i]);\
 	}\
 }
 
 #define __PUT_bool_list_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":",__dst,#attr);\
+	__buf += sprintf(__buf,"\"%s\":",#attr);\
 	if (__src->attr.length == 0){\
-		sprintf(__dst,"%s[],",__dst);\
+		__buf += sprintf(__buf,"[],");\
 	}\
 	else{\
-		sprintf(__dst,"%s[",__dst);\
+		__buf += sprintf(__buf,"[");\
 		int __i = 0;\
 		for (;__i < __src->attr.length - 1; __i++){\
-			sprintf(__dst,"%s%s,",__dst, (__src->attr.list[__i])? "true" : "false");\
+			__buf += sprintf(__buf,"%s,", (__src->attr.list[__i])? "true" : "false");\
 		}\
-		sprintf(__dst,"%s%s],",__dst,(__src->attr.list[__i])? "true" : "false");\
+		__buf += sprintf(__buf,"%s],",(__src->attr.list[__i])? "true" : "false");\
 	}\
 }
 
 #define __PUT_string_list_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":",__dst,#attr);\
+	__buf += sprintf(__buf,"\"%s\":",#attr);\
 	if (__src->attr.length == 0){\
-		sprintf(__dst,"%s[],",__dst);\
+		__buf += sprintf(__buf,"[],");\
 	}\
 	else{\
-		sprintf(__dst,"%s[",__dst);\
+		__buf += sprintf(__buf,"[");\
 		int __i = 0;\
 		for (; __i < __src->attr.length - 1; __i++){\
-			sprintf(__dst,"%s\"%s\",",__dst, __src->attr.list[__i]);\
+			__buf += sprintf(__buf,"\"%s\",", __src->attr.list[__i]);\
 		}\
-		sprintf(__dst,"%s\"%s\"],",__dst, __src->attr.list[__i]);\
+		__buf += sprintf(__buf,"\"%s\"],", __src->attr.list[__i]);\
 	}\
 }
 
 #define __PUT_json_list_INTO_STRING(attr) {\
-	sprintf(__dst,"%s\"%s\":",__dst,#attr);\
+	__buf += sprintf(__buf,"\"%s\":",#attr);\
 	if (__src->attr.length == 0){\
-		sprintf(__dst,"%s[],",__dst);\
+		__buf += sprintf(__buf,"[],");\
 	}\
 	else{\
-		sprintf(__dst,"%s[",__dst);\
+		__buf += sprintf(__buf,"[");\
 		int __i = 0;\
 		for (; __i < __src->attr.length - 1; __i++){\
-			sprintf(__dst,"%s%s,",__dst, __src->attr.list[__i]);\
+			__buf += sprintf(__buf,"%s,", __src->attr.list[__i]);\
 		}\
-		sprintf(__dst,"%s%s],",__dst, __src->attr.list[__i]);\
+		__buf += sprintf(__buf,"%s],", __src->attr.list[__i]);\
 	}\
 }
 //----------------------------------------------------------------
@@ -282,11 +282,10 @@ extern size_t __string_list_string_length(struct string_list list);
 	__PUT_##type##_INTO_STRING(attr);\
 }
 
-#define __SINGLE_ATTRIBUTE_OF_JSON(attr,type) {\
-	if (!strcmp(#attr,__name)) {\
+#define __SINGLE_ATTRIBUTE_OF_JSON(attr,type) \
+	else if (!strcmp(#attr,__name)) {\
 		__DECODE_##type##_ATTRIBUTE(attr,__value)\
-	}\
-}
+	}
 
 #define DECODE_JSON_AS_STRUCT(src,type,output,...) {\
 	char *__source = (src);\
@@ -329,12 +328,14 @@ extern size_t __string_list_string_length(struct string_list list);
 				__brace_count--;\
 				if (__brace_count == 0){\
 					*__json = '\0';\
+					if (0){}\
 					MAP_2ARG(__SINGLE_ATTRIBUTE_OF_JSON, __VA_ARGS__)\
 					__state = 0;\
 				}\
 			}\
 			else if (*__json == ',' && __brace_count == 1) {\
 				*__json = '\0';\
+				if (0){}\
 				MAP_2ARG(__SINGLE_ATTRIBUTE_OF_JSON, __VA_ARGS__)\
 				__state = 0;\
 			}\
@@ -346,15 +347,17 @@ extern size_t __string_list_string_length(struct string_list list);
 
 #define ENCODE_STRUCT_AS_JSON(source,type,dest,...) {\
 	char *__dst;\
+	char *__buf;\
 	type *__src = &(source);\
 	char __dummy[1];\
 	size_t __length = 2;\
 	MAP_2ARG(__GET_STRING_LENGTH_OF_SINGLE_ATTRIBUTE_OF_STRUCT, __VA_ARGS__)\
 	__dst = malloc(__length);\
+	__buf = __dst + 1;\
 	__dst[0] = '{';\
 	__dst[1] = '\0';\
 	MAP_2ARG(__PUT_SINGLE_ATTRIBUTE_OF_STRUCT, __VA_ARGS__)\
-	__dst[strlen(__dst) - 1] = '}';\
+	*(__buf-1) = '}';\
 	(dest) = __dst;\
 }
 

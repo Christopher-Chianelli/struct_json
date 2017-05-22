@@ -16,9 +16,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include <stdio.h>
 #include "struct_json.h"
 
+int calls = 0;
 void copy_json_remove_insignificant_whitespace(char *dest, const char *src)
 {
 	int in_string = 0;
@@ -57,6 +58,7 @@ size_t get_json_list_length(const char *src)
 	int in_string = 0;
 	int brace_count = 0;
 	size_t out = 0;
+	calls++;
 
 	if (src[1] == ']')
 		return out;
