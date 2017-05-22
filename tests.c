@@ -125,5 +125,51 @@ int main(int argc, char **argv)
 	}
 	printf("AJAX POST PASSED\n");
 
+	post_data.a = 3;
+	post_data.b = 5;
+
+	ENCODE_STRUCT_AS_JSON(post_data,typeof(post_data),post_data_string,
+			a,int,
+			b,int);
+
+	res = ajax_put_request("httpbin.org/put",post_data_string);
+		if (res == NULL)
+		{
+			fail_test("ERROR OCCUR WITH HTTP REQUEST\n");
+		}
+
+	post_data.a = post_data.b = 0;
+	GET_ATTRIBUTE_FROM_JSON(res,char *,temp,json,json)
+	DECODE_JSON_AS_STRUCT(temp,typeof(post_data),post_data,a,int,b,int);
+
+	if (post_data.a != 3 || post_data.b != 5)
+	{
+		fail_test("AJAX PUT REQUEST RETURNED INCORRECT PARAMETERS");
+	}
+	printf("AJAX PUT PASSED\n");
+
+	post_data.a = 3;
+	post_data.b = 5;
+
+	ENCODE_STRUCT_AS_JSON(post_data,typeof(post_data),post_data_string,
+			a,int,
+			b,int);
+
+	res = ajax_delete_request("httpbin.org/delete",post_data_string);
+	if (res == NULL)
+	{
+		fail_test("ERROR OCCUR WITH HTTP REQUEST\n");
+	}
+
+	post_data.a = post_data.b = 0;
+	GET_ATTRIBUTE_FROM_JSON(res,char *,temp,json,json)
+	DECODE_JSON_AS_STRUCT(temp,typeof(post_data),post_data,a,int,b,int);
+
+	if (post_data.a != 3 || post_data.b != 5)
+	{
+		fail_test("AJAX DELETE REQUEST RETURNED INCORRECT PARAMETERS");
+	}
+	printf("AJAX DELETE PASSED\n");
+
 	return 0;
 }

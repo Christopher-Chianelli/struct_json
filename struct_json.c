@@ -460,3 +460,71 @@ char *ajax_post_request(const char *url, const char *data)
 			return out;
 		}
 }
+
+char *ajax_put_request(const char *url, const char *data)
+{
+	char *path = strchr(url,'/');
+		char *host = malloc(path - url + 1);
+		strncpy(host,url,path - url);
+		host[path - url] = '\0';
+
+		char *host_header = malloc(7 + strlen(host));
+		strcpy(host_header, "Host: ");
+		strcat(host_header, host);
+
+		char *headers[] = {"Accept: application/json",
+				           "Accept-Encoding: UTF-8",
+						   "Accept-Language: en-US,en;q=0.8",
+						   "Content-Type: application/json",
+						   "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36",
+						   host_header};
+
+		char *response = http_request(host,80,"PUT",path,data,(const char **) headers,6);
+		char *json_part = strstr(response,"\r\n\r\n");
+		if (strlen(json_part + 4) == 0)
+		{
+			free(response);
+			return NULL;
+		}
+		else
+		{
+			char *out = malloc(strlen(json_part + 3));
+			strcpy(out,json_part + 4);
+			free(response);
+			return out;
+		}
+}
+
+char *ajax_delete_request(const char *url, const char *data)
+{
+	char *path = strchr(url,'/');
+		char *host = malloc(path - url + 1);
+		strncpy(host,url,path - url);
+		host[path - url] = '\0';
+
+		char *host_header = malloc(7 + strlen(host));
+		strcpy(host_header, "Host: ");
+		strcat(host_header, host);
+
+		char *headers[] = {"Accept: application/json",
+				           "Accept-Encoding: UTF-8",
+						   "Accept-Language: en-US,en;q=0.8",
+						   "Content-Type: application/json",
+						   "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36",
+						   host_header};
+
+		char *response = http_request(host,80,"DELETE",path,data,(const char **) headers,6);
+		char *json_part = strstr(response,"\r\n\r\n");
+		if (strlen(json_part + 4) == 0)
+		{
+			free(response);
+			return NULL;
+		}
+		else
+		{
+			char *out = malloc(strlen(json_part + 3));
+			strcpy(out,json_part + 4);
+			free(response);
+			return out;
+		}
+}

@@ -60,6 +60,8 @@ extern char *get_next_json_list_item_end(char *src);
 extern char *http_request(const char *host, int portno, const char *method, const char *path, const char *data, const char **headers, size_t header_count);
 extern char *ajax_get_request(const char *url, const char *params);
 extern char *ajax_post_request(const char *url, const char *data);
+extern char *ajax_put_request(const char *url, const char *data);
+extern char *ajax_delete_request(const char *url, const char *data);
 extern char *escape_double_quotes_and_backslashes(char *str);
 extern char *unescape_double_quotes_and_backslashes(char *str);
 
