@@ -82,5 +82,48 @@ int main(int argc, char **argv)
 		printf("ENCODE PASSED\n");
 	}
 
+	char *res = ajax_get_request("httpbin.org/get", "hello=hi&bye=goodbye");
+	if (res == NULL)
+	{
+		fail_test("ERROR OCCUR WITH HTTP REQUEST\n");
+	}
+	char *temp;
+	GET_ATTRIBUTE_FROM_JSON(res,char *,temp,args,json)
+	struct {char *hello; char *bye;} res_args;
+	DECODE_JSON_AS_STRUCT(temp,typeof(res_args),res_args,
+			hello,string,
+			bye,string);
+
+	if (strcmp(res_args.hello,"hi") || strcmp(res_args.bye,"goodbye"))
+	{
+		fail_test("AJAX GET REQUEST RETURNED INCORRECT PARAMETERS");
+	}
+	printf("AJAX GET PASSED\n");
+
+	struct {int a; int b;} post_data;
+	post_data.a = 3;
+	post_data.b = 5;
+	char *post_data_string;
+
+	ENCODE_STRUCT_AS_JSON(post_data,typeof(post_data),post_data_string,
+			a,int,
+			b,int);
+
+	res = ajax_post_request("httpbin.org/post",post_data_string);
+		if (res == NULL)
+		{
+			fail_test("ERROR OCCUR WITH HTTP REQUEST\n");
+		}
+
+	post_data.a = post_data.b = 0;
+	GET_ATTRIBUTE_FROM_JSON(res,char *,temp,json,json)
+	DECODE_JSON_AS_STRUCT(temp,typeof(post_data),post_data,a,int,b,int);
+
+	if (post_data.a != 3 || post_data.b != 5)
+	{
+		fail_test("AJAX POST REQUEST RETURNED INCORRECT PARAMETERS");
+	}
+	printf("AJAX POST PASSED\n");
+
 	return 0;
 }
