@@ -31,7 +31,9 @@ int __struct_json___required_chars_to_escape(char *str)
 	int required_chars = 1;
 	while (*temp)
 	{
-		if (*temp == '"' || *temp == '\\')
+		if (*temp == '"' || *temp == '\\' ||
+			*temp == '\b' || *temp == '\f' || *temp == '\n' ||
+			*temp == '\r' || *temp == '\t')
 			required_chars++;
 		required_chars++;
 		temp++;
@@ -40,7 +42,29 @@ int __struct_json___required_chars_to_escape(char *str)
 	return required_chars;
 }
 
-void copy_json_remove_insignificant_whitespace(char *dest, const char *src)
+char __struct_json___parse_hex_digits(char *digits)
+{
+	return ((__struct_json___parse_hex_digit(*digits)) << 4) |
+			(__struct_json___parse_hex_digit(*(digits + 1)));
+}
+
+char __struct_json___parse_hex_digit(char digit)
+{
+	if ('0' <= digit && digit <= '9')
+	{
+		return digit - '0';
+	}
+	else if ('a' <= digit && digit <= 'f')
+	{
+		return digit - 'a' + 10;
+	}
+	else
+	{
+		return digit - 'A' + 10;
+	}
+}
+
+void __struct_json___copy_json_remove_insignificant_whitespace(char *dest, const char *src)
 {
 	int in_string = 0;
 	while (*src)
@@ -73,7 +97,7 @@ void copy_json_remove_insignificant_whitespace(char *dest, const char *src)
 	}
 }
 
-char *escape_double_quotes_and_backslashes(char *str)
+char *c_string_to_json_string(char *str)
 {
 	char *temp = str;
 	int required_chars = __struct_json___required_chars_to_escape(str);
@@ -82,13 +106,55 @@ char *escape_double_quotes_and_backslashes(char *str)
 
 	while (*temp)
 	{
-		if (*temp == '"' || *temp == '\\')
+		switch (*temp)
 		{
+		case '"':
 			out[i] = '\\';
 			i++;
+			out[i] = '"';
+			break;
+
+		case '\\':
+			out[i] = '\\';
+			i++;
+			out[i] = '\\';
+			break;
+
+		case '\b':
+			out[i] = '\\';
+			i++;
+			out[i] = 'b';
+			break;
+
+		case '\f':
+			out[i] = '\\';
+			i++;
+			out[i] = 'f';
+			break;
+
+		case '\n':
+			out[i] = '\\';
+			i++;
+			out[i] = 'n';
+			break;
+
+		case '\r':
+			out[i] = '\\';
+			i++;
+			out[i] = 'r';
+			break;
+
+		case '\t':
+			out[i] = '\\';
+			i++;
+			out[i] = 't';
+			break;
+
+		default:
+			out[i] = *temp;
+			i++;
+			break;
 		}
-		out[i] = *temp;
-		i++;
 		temp++;
 	}
 	out[i] = *temp;
@@ -96,14 +162,19 @@ char *escape_double_quotes_and_backslashes(char *str)
 	return out;
 }
 
-char *unescape_double_quotes_and_backslashes(char *str)
+char *json_string_to_c_string(char *str)
 {
 	char *temp = str + 1;
 	int required_chars = 0;
 	while (*temp)
 	{
-		if (*temp == '\\')
+		if (*temp == '\\'){
 			temp++;
+			if (*(temp + 1) == 'u')
+			{
+				temp += 3;
+			}
+		}
 		required_chars++;
 		temp++;
 	}
@@ -117,13 +188,53 @@ char *unescape_double_quotes_and_backslashes(char *str)
 		if (*temp == '\\')
 		{
 			temp++;
+			switch (*temp)
+					{
+					case '"':
+						out[i] = '"';
+						break;
+
+					case '\\':
+						out[i] = '\\';
+						break;
+
+					case 'b':
+						out[i] = '\b';
+						break;
+
+					case 'f':
+						out[i] = '\f';
+						break;
+
+					case 'n':
+						out[i] = '\n';
+						break;
+
+					case 'r':
+						out[i] = '\r';
+						break;
+
+					case 't':
+						out[i] = '\t';
+						break;
+
+					case 'u':
+						temp++;
+						out[i] = __struct_json___parse_hex_digits(temp);
+						temp += 2;
+						i++;
+						out[i] = __struct_json___parse_hex_digits(temp);
+						break;
+					}
+			temp++;
+			i++;
+			continue;
 		}
 		out[i] = *temp;
 		i++;
 		temp++;
 	}
 	out[i - 1] = *temp;
-
 	return out;
 }
 

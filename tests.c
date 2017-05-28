@@ -6,170 +6,141 @@
 void fail_test(const char *msg)
 {
 	fprintf(stderr,"%s\n",msg);
-	exit(1);
+}
+
+void test_json_bool()
+{
+	char *test_json1 = "{\"a\":true}";
+	char *test_json2 = "{\"a\":false}";
+
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,bool);
+	CREATE_STRUCT_FROM_JSON(test_json2,out2,a,bool);
+	if (out1.a != 1 || out2.a != 0)
+		fail_test("Boolean decode failed");
+	else
+		printf("Boolean decode passed\n");
+}
+
+void test_json_int()
+{
+	char *test_json1 = "{\"a\":42}";
+
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,int);
+	if (out1.a != 42)
+		fail_test("Int decode failed");
+	else
+		printf("Int decode passed\n");
+}
+
+void test_json_float()
+{
+	char *test_json1 = "{\"a\":1.5}";
+
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,float);
+	if (out1.a < 1.49 || out1.a > 1.51)
+		fail_test("Float decode failed");
+	else
+		printf("Float decode passed\n");
+}
+
+void test_json_string()
+{
+	char *test_json1 = "{\"a\":\"Hello World!\\n\"}";
+
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,string);
+	if (strcmp(out1.a,"Hello World!\n"))
+		fail_test("String decode failed");
+	else
+		printf("String decode passed\n");
+}
+
+void test_json_json()
+{
+	char *test_json1 = "{\"a\":{\"a\":1,\"b\":2}}";
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,json);
+	int a,b;
+	GET_ATTRIBUTE_FROM_JSON(out1.a,a,a,int);
+	GET_ATTRIBUTE_FROM_JSON(out1.a,b,b,int);
+	if (a != 1 || b != 2)
+		fail_test("JSON decode failed");
+	else
+		printf("JSON decode passed\n");
+}
+
+void test_json_bool_list()
+{
+	char *test_json1 = "{\"a\":[true,false]}";
+
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,bool_list);
+	if (out1.a.length != 2 || out1.a.list[0] != 1 || out1.a.list[1] != 0)
+		fail_test("Boolean list decode failed");
+	else
+		printf("Boolean list decode passed\n");
+}
+
+void test_json_int_list()
+{
+	char *test_json1 = "{\"a\":[1,2]}";
+
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,int_list);
+	if (out1.a.length != 2 || out1.a.list[0] != 1 || out1.a.list[1] != 2)
+		fail_test("Int list decode failed");
+	else
+		printf("Int list decode passed\n");
+}
+
+void test_json_float_list()
+{
+	char *test_json1 = "{\"a\":[1.5,2.5]}";
+
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,float_list);
+	if (out1.a.length != 2 || fabsf(out1.a.list[0]-1.5f) > 0.1f || fabsf(out1.a.list[1]-2.5f) > 0.1f)
+		fail_test("Float list decode failed");
+	else
+		printf("Float list decode passed\n");
+}
+
+void test_json_string_list()
+{
+	char *test_json1 = "{\"a\":[\"hi\",\"bye\"]}";
+
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,string_list);
+	if (out1.a.length != 2 || strcmp(out1.a.list[0],"hi") || strcmp(out1.a.list[1],"bye"))
+		fail_test("String list decode failed");
+	else
+		printf("String list decode passed\n");
+}
+
+void test_json_json_list()
+{
+	char *test_json1 = "{\"a\":[{\"a\":1},{\"b\":2}]}";
+	CREATE_STRUCT_FROM_JSON(test_json1,out1,a,json_list);
+	if (out1.a.length != 2)
+	{
+		fail_test("JSON list decode failed");
+		return;
+	}
+	int a,b;
+	GET_ATTRIBUTE_FROM_JSON(out1.a.list[0],a,a,int);
+	GET_ATTRIBUTE_FROM_JSON(out1.a.list[1],b,b,int);
+	if (a != 1 || b != 2)
+		fail_test("JSON list decode failed");
+	else
+		printf("JSON list decode passed\n");
 }
 
 int main(int argc, char **argv)
 {
-	char *test_json = "{\"a\":true,"
-			          "\"b\":1,"
-			          "\"c\":2.500000,"
-			          "\"d\":\"hello\","
-			          "\"e\":{a:10,b:2},"
-			          "\"f\":[true,false],"
-				      "\"g\":[1,2],"
-				      "\"h\":[2.500000,4.500000],"
-					  "\"i\":[\"hello\",\"goodbye\"],"
-				      "\"j\":[{a:10,b:2},{c:2,d:1}]}";
-	struct {int a; int b; float c; char *d; char *e;
-		   struct bool_list f; struct int_list g; struct float_list h;
-	       struct string_list i; struct json_list j;} test_struct;
+	test_json_bool();
+	test_json_int();
+	test_json_float();
+	test_json_string();
+	test_json_json();
 
-	DECODE_JSON_AS_STRUCT(test_json,typeof(test_struct),test_struct,
-			a,bool,
-			b,int,
-			c,float,
-			d,string,
-			e,json,
-			f,bool_list,
-			g,int_list,
-			h,float_list,
-			i,string_list,
-			j,json_list);
-
-	if (test_struct.a != 1)
-		fail_test("DECODE FAILED: BOOL does not have expected value");
-	if (test_struct.b != 1)
-		fail_test("DECODE FAILED: INT does not have expected value");
-	if (fabsf(test_struct.c - 2.5f) > 0.01f)
-		fail_test("DECODE FAILED: FLOAT does not have expected value");
-	if (strcmp(test_struct.d,"hello"))
-		fail_test("DECODE FAILED: STRING does not have expected value");
-	if (strcmp(test_struct.e, "{a:10,b:2}"))
-		fail_test("DECODE FAILED: JSON does not have expected value");
-	if (test_struct.f.length != 2 || test_struct.f.list[0] != 1 || test_struct.f.list[1] != 0)
-		fail_test("DECODE FAILED: BOOL LIST does not have expected value");
-	if (test_struct.g.length != 2 || test_struct.g.list[0] != 1 || test_struct.g.list[1] != 2)
-		fail_test("DECODE FAILED: INT LIST does not have expected value");
-	if (test_struct.h.length != 2 || fabsf(test_struct.h.list[0] - 2.5f) > 0.01f || fabsf(test_struct.h.list[1] - 4.5f) > 0.01f)
-		fail_test("DECODE FAILED: FLOAT LIST does not have expected value");
-	if (test_struct.i.length != 2 || strcmp(test_struct.i.list[0],"hello") || strcmp(test_struct.i.list[1],"goodbye"))
-		fail_test("DECODE FAILED: STRING LIST does not have expected value");
-	if (test_struct.j.length != 2 || strcmp(test_struct.j.list[0],"{a:10,b:2}") || strcmp(test_struct.j.list[1],"{c:2,d:1}"))
-		fail_test("DECODE FAILED: JSON LIST does not have expected value");
-
-	printf("DECODE PASSED\n");
-
-	char *out;
-	ENCODE_STRUCT_AS_JSON(test_struct,typeof(test_struct),out,
-			a,bool,
-			b,int,
-			c,float,
-			d,string,
-			e,json,
-			f,bool_list,
-			g,int_list,
-			h,float_list,
-			i,string_list,
-			j,json_list);
-
-	if (strcmp(test_json,out))
-	{
-		fail_test("ENCODE FAILED: JSON does not match expected output");
-	}
-	else
-	{
-		printf("ENCODE PASSED\n");
-	}
-
-	char *res = ajax_get_request("httpbin.org/get", "hello=hi&bye=goodbye");
-	if (res == NULL)
-	{
-		fail_test("ERROR OCCUR WITH HTTP REQUEST\n");
-	}
-	char *temp;
-	GET_ATTRIBUTE_FROM_JSON(res,char *,temp,args,json)
-	struct {char *hello; char *bye;} res_args;
-	DECODE_JSON_AS_STRUCT(temp,typeof(res_args),res_args,
-			hello,string,
-			bye,string);
-
-	if (strcmp(res_args.hello,"hi") || strcmp(res_args.bye,"goodbye"))
-	{
-		fail_test("AJAX GET REQUEST RETURNED INCORRECT PARAMETERS");
-	}
-	printf("AJAX GET PASSED\n");
-
-	struct {int a; int b;} post_data;
-	post_data.a = 3;
-	post_data.b = 5;
-	char *post_data_string;
-
-	ENCODE_STRUCT_AS_JSON(post_data,typeof(post_data),post_data_string,
-			a,int,
-			b,int);
-
-	res = ajax_post_request("httpbin.org/post",post_data_string);
-		if (res == NULL)
-		{
-			fail_test("ERROR OCCUR WITH HTTP REQUEST\n");
-		}
-
-	post_data.a = post_data.b = 0;
-	GET_ATTRIBUTE_FROM_JSON(res,char *,temp,json,json)
-	DECODE_JSON_AS_STRUCT(temp,typeof(post_data),post_data,a,int,b,int);
-
-	if (post_data.a != 3 || post_data.b != 5)
-	{
-		fail_test("AJAX POST REQUEST RETURNED INCORRECT PARAMETERS");
-	}
-	printf("AJAX POST PASSED\n");
-
-	post_data.a = 3;
-	post_data.b = 5;
-
-	ENCODE_STRUCT_AS_JSON(post_data,typeof(post_data),post_data_string,
-			a,int,
-			b,int);
-
-	res = ajax_put_request("httpbin.org/put",post_data_string);
-		if (res == NULL)
-		{
-			fail_test("ERROR OCCUR WITH HTTP REQUEST\n");
-		}
-
-	post_data.a = post_data.b = 0;
-	GET_ATTRIBUTE_FROM_JSON(res,char *,temp,json,json)
-	DECODE_JSON_AS_STRUCT(temp,typeof(post_data),post_data,a,int,b,int);
-
-	if (post_data.a != 3 || post_data.b != 5)
-	{
-		fail_test("AJAX PUT REQUEST RETURNED INCORRECT PARAMETERS");
-	}
-	printf("AJAX PUT PASSED\n");
-
-	post_data.a = 3;
-	post_data.b = 5;
-
-	ENCODE_STRUCT_AS_JSON(post_data,typeof(post_data),post_data_string,
-			a,int,
-			b,int);
-
-	res = ajax_delete_request("httpbin.org/delete",post_data_string);
-	if (res == NULL)
-	{
-		fail_test("ERROR OCCUR WITH HTTP REQUEST\n");
-	}
-
-	post_data.a = post_data.b = 0;
-	GET_ATTRIBUTE_FROM_JSON(res,char *,temp,json,json)
-	DECODE_JSON_AS_STRUCT(temp,typeof(post_data),post_data,a,int,b,int);
-
-	if (post_data.a != 3 || post_data.b != 5)
-	{
-		fail_test("AJAX DELETE REQUEST RETURNED INCORRECT PARAMETERS");
-	}
-	printf("AJAX DELETE PASSED\n");
-
+	test_json_bool_list();
+	test_json_int_list();
+	test_json_float_list();
+	test_json_string_list();
+	test_json_json_list();
 	return 0;
 }

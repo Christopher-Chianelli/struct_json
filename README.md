@@ -9,9 +9,11 @@ attributes and datatypes so it can generate a dynamic function that parses the J
 and put the data into an already existing struct.
 
 ## Call format
-DECODE_JSON_AS_STRUCT(json,typeof(struct),out,(attribute,type)...)
-ENCODE_STRUCT_AS_JSON(struct,typeof(struct),out,(attribute,type)...)
-
+```
+CREATE_STRUCT_FROM_JSON(json,out,(attribute,type)...)
+UPDATE_STRUCT_FROM_JSON(json,typeof(out),out,(attribute,type)...)
+CREATE_JSON_FROM_STRUCT(struct,typeof(struct),out,(attribute,type)...)
+```
 ## Supported Types
 - int
 - float
@@ -24,13 +26,12 @@ ENCODE_STRUCT_AS_JSON(struct,typeof(struct),out,(attribute,type)...)
 ### JSON to Struct, containing attributes status (an int) and msg (a string)
 ```
 char *json = "{\"status\":200,\"msg\":\"OK\"}";
-struct {int status; char *msg;} out;
-DECODE_JSON_AS_STRUCT(json,typeof(out),out,status,int,msg,string)
+CREATE_STRUCT_FROM_JSON(json,,out,status,int,msg,string)
 ```
 
 ### Struct to JSON, containing attributes status (an int) and msg (a string)
 ```
 char *json;
 struct {int status; char *msg;} out;
-ENCODE_STRUCT_AS_JSON(out,typeof(out),json,status,int,msg,string)
+CREATE_JSON_FROM_STRUCT(out,typeof(out),json,status,int,msg,string)
 ```

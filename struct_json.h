@@ -19,6 +19,7 @@
 #ifndef STRUCT_JSON_H
 #define STRUCT_JSON_H
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "map-macro/map.h"
@@ -54,7 +55,6 @@ struct json_list
 };
 
 //Public methods
-extern void copy_json_remove_insignificant_whitespace(char *dest, const char *src);
 extern size_t get_json_list_length(const char *src);
 extern char *get_next_json_list_item_end(char *src);
 extern char *http_request(const char *host, int portno, const char *method, const char *path, const char *data, const char **headers, size_t header_count);
@@ -62,22 +62,39 @@ extern char *ajax_get_request(const char *url, const char *params);
 extern char *ajax_post_request(const char *url, const char *data);
 extern char *ajax_put_request(const char *url, const char *data);
 extern char *ajax_delete_request(const char *url, const char *data);
-extern char *escape_double_quotes_and_backslashes(char *str);
-extern char *unescape_double_quotes_and_backslashes(char *str);
+extern char *json_string_to_c_string(char *str);
+extern char *c_string_to_json_string(char *str);
 
 //Private methods
+extern void __struct_json___copy_json_remove_insignificant_whitespace(char *dest, const char *src);
 extern size_t __struct_json___int_list_string_length(struct int_list list);
 extern size_t __struct_json___float_list_string_length(struct float_list list);
 extern size_t __struct_json___json_list_string_length(struct json_list list);
 extern size_t __struct_json___string_list_string_length(struct string_list list);
 extern int __struct_json___required_chars_to_escape(char *str);
+extern char __struct_json___parse_hex_digits(char *digits);
+extern char __struct_json___parse_hex_digit(char digit);
 
 #define MAP0_2ARG(f, x, y, peek, ...) f(x,y) MAP_NEXT(peek, MAP1_2ARG)(f, peek, __VA_ARGS__)
 #define MAP1_2ARG(f, x, y, peek, ...) f(x,y) MAP_NEXT(peek, MAP0_2ARG)(f, peek, __VA_ARGS__)
 #define MAP_2ARG(f, ...) EVAL(MAP1_2ARG(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 
+#define __struct_json___int_ATTRIBUTE(name) int name;
+#define __struct_json___float_ATTRIBUTE(name) float name;
+#define __struct_json___bool_ATTRIBUTE(name) unsigned char name;
+#define __struct_json___string_ATTRIBUTE(name) char *name;
+#define __struct_json___json_ATTRIBUTE(name) char *name;
+
+#define __struct_json___int_list_ATTRIBUTE(name) struct int_list name;
+#define __struct_json___float_list_ATTRIBUTE(name) struct float_list name;
+#define __struct_json___bool_list_ATTRIBUTE(name) struct bool_list name;
+#define __struct_json___string_list_ATTRIBUTE(name) struct string_list name;
+#define __struct_json___json_list_ATTRIBUTE(name) struct json_list name;
+
+#define __struct_json___LIST_ATTRIBUTE(name,type) __struct_json___##type##_ATTRIBUTE(name)
+
 #define __struct_json___DECODE_string_ATTRIBUTE(attr,value) {\
-	__out->attr = unescape_double_quotes_and_backslashes(value);\
+	__out->attr = json_string_to_c_string(value);\
 }
 
 #define __struct_json___DECODE_json_ATTRIBUTE(attr,value) {\
@@ -105,7 +122,7 @@ extern int __struct_json___required_chars_to_escape(char *str);
 	for (int __i = 0; __i < __out->attr.length; __i++){\
 		char *__item_end = get_next_json_list_item_end(value);\
 		*__item_end = '\0';\
-		__out->attr.list[__i] = unescape_double_quotes_and_backslashes(value);\
+		__out->attr.list[__i] = json_string_to_c_string(value);\
 		value = __item_end + 1;\
 	}\
 }
@@ -193,7 +210,7 @@ extern int __struct_json___required_chars_to_escape(char *str);
 }
 
 #define __struct_json___PUT_string_INTO_STRING(attr) {\
-	char *__temp = escape_double_quotes_and_backslashes(__src->attr);\
+	char *__temp = c_string_to_json_string(__src->attr);\
 	__buf += sprintf(__buf,"\"%s\":\"%s\",", #attr, __temp);\
 	free(__temp);\
 }
@@ -257,11 +274,11 @@ extern int __struct_json___required_chars_to_escape(char *str);
 		int __i = 0;\
 		char *__temp;\
 		for (; __i < __src->attr.length - 1; __i++){\
-			__temp = escape_double_quotes_and_backslashes(__src->attr.list[__i]);\
+			__temp = c_string_to_json_string(__src->attr.list[__i]);\
 			__buf += sprintf(__buf,"\"%s\",", __temp);\
 			free(__temp);\
 		}\
-		__temp = escape_double_quotes_and_backslashes(__src->attr.list[__i]);\
+		__temp = c_string_to_json_string(__src->attr.list[__i]);\
 		__buf += sprintf(__buf,"\"%s\"],", __temp);\
 		free(__temp);\
 	}\
@@ -297,129 +314,68 @@ extern int __struct_json___required_chars_to_escape(char *str);
 		__struct_json___DECODE_##type##_ATTRIBUTE(attr,__value)\
 	}
 
-#define DECODE_JSON_AS_STRUCT(src,type,output,...) {\
-	char *__source = (src);\
-	char *__json = malloc(strlen(__source));\
-	copy_json_remove_insignificant_whitespace(__json,__source);\
-    char *__to_free = __json;\
+#define FOREACH_ITEM_IN_JSON(src,key,value)\
+	for (int __ready = 0,__brace_count = 0,\
+			 __state = 0,__in_string = 0,\
+			 __not_done = 1;\
+			 __not_done;\
+			 __not_done=0)\
+	for (char *__source = (src),*__json = malloc(strlen(__source)),\
+			*__to_free = __json;\
+	        (__not_done)?(__struct_json___copy_json_remove_insignificant_whitespace(__json,__source),0)\
+	                  :(free(__to_free),1),__not_done;__not_done=0)\
+	for (char *key,*value;\
+	        *__json || __ready;\
+			__ready=0,(\
+	        (__in_string)?\
+			    (__in_string = (*__json == '"')? 0 : 1):\
+			((*__json == '"')?\
+					((__state == 0)?\
+							(__state = 1,key = __json + 1,0):\
+					 (__state == 1)?\
+							(__state = 2, *__json = '\0',0):\
+					 ("ELSE",\
+					         __in_string = 1)\
+			):\
+            (*__json == ':' && __state == 2)?\
+            		(__state = 3,value = __json + 1,0):\
+			(*__json == '{' || *__json == '[')?\
+					(__brace_count++):\
+			(*__json == '}' || *__json == ']')?\
+					(__brace_count--,(!__brace_count)?(*__json='\0',__state=0,__ready=1):0):\
+			(*__json == ',' && __brace_count == 1)?\
+					(*__json='\0',__state=0,__ready=1):\
+					0)\
+			),__json++)\
+			if (__ready)
+
+#define UPDATE_STRUCT_FROM_JSON(src,type,output,...) {\
 	type *__out = &(output);\
-	char *__name;\
-	char *__value;\
-	int __in_string = 0;\
-	int __brace_count = 0;\
-	int __state = 0;\
-	\
-	while (*__json) {\
-		if (__in_string) {\
-			__in_string = (*__json == '"')? 0 : 1;\
-		}\
-		else {\
-			if (*__json == '"') {\
-				if (__state == 0) {\
-				__state = 1;\
-				__name = __json + 1;\
-				}\
-				else if (__state == 1) {\
-					__state = 2;\
-					*__json = '\0';\
-				}\
-				else {\
-					__in_string = 1;\
-				}\
-			}\
-			else if (*__json == ':' && __state == 2){\
-					__state = 3;\
-					__value = __json + 1;\
-			}\
-			else if (*__json == '{' || *__json == '[') {\
-				__brace_count++;\
-			}\
-			else if (*__json == '}' || *__json == ']') {\
-				__brace_count--;\
-				if (__brace_count == 0){\
-					*__json = '\0';\
-					if (0){}\
-					MAP_2ARG(__struct_json___SINGLE_ATTRIBUTE_OF_JSON, __VA_ARGS__)\
-					__state = 0;\
-				}\
-			}\
-			else if (*__json == ',' && __brace_count == 1) {\
-				*__json = '\0';\
-				if (0){}\
-				MAP_2ARG(__struct_json___SINGLE_ATTRIBUTE_OF_JSON, __VA_ARGS__)\
-				__state = 0;\
-			}\
-		}\
-		__json++;\
-	}\
-	free(__to_free);\
+	FOREACH_ITEM_IN_JSON(src,__name,__value){\
+		if (0){}\
+			MAP_2ARG(__struct_json___SINGLE_ATTRIBUTE_OF_JSON, __VA_ARGS__)\
+    }\
 }
 
-#define GET_ATTRIBUTE_FROM_JSON(src,type,output,attr,json_type) {\
-	char *__source = (src);\
-	char *__json = malloc(strlen(__source));\
-	copy_json_remove_insignificant_whitespace(__json,__source);\
-    char *__to_free = __json;\
-	struct {type attr;} *__out = (void *)&(output);\
-	char *__name;\
-	char *__value;\
-	int __in_string = 0;\
-	int __brace_count = 0;\
-	int __state = 0;\
-	\
-	while (*__json) {\
-		if (__in_string) {\
-			__in_string = (*__json == '"')? 0 : 1;\
-		}\
-		else {\
-			if (*__json == '"') {\
-				if (__state == 0) {\
-				__state = 1;\
-				__name = __json + 1;\
-				}\
-				else if (__state == 1) {\
-					__state = 2;\
-					*__json = '\0';\
-				}\
-				else {\
-					__in_string = 1;\
-				}\
-			}\
-			else if (*__json == ':' && __state == 2){\
-					__state = 3;\
-					__value = __json + 1;\
-			}\
-			else if (*__json == '{' || *__json == '[') {\
-				__brace_count++;\
-			}\
-			else if (*__json == '}' || *__json == ']') {\
-				__brace_count--;\
-				if (__brace_count == 0){\
-					*__json = '\0';\
-					if (0){}\
-					__struct_json___SINGLE_ATTRIBUTE_OF_JSON(attr,json_type)\
-					__state = 0;\
-				}\
-			}\
-			else if (*__json == ',' && __brace_count == 1) {\
-				*__json = '\0';\
-				if (0){}\
-				__struct_json___SINGLE_ATTRIBUTE_OF_JSON(attr,json_type)\
-				else\
-                {\
-					__state = 0;\
-					__json++;\
-					continue;\
-                }\
-				break;\
-			}\
-		}\
-		__json++;\
-	}\
-	free(__to_free);\
+#define CREATE_STRUCT_FROM_JSON(src,output,...) \
+	struct{MAP_2ARG(__struct_json___LIST_ATTRIBUTE,__VA_ARGS__)} output;\
+	{\
+	struct{MAP_2ARG(__struct_json___LIST_ATTRIBUTE,__VA_ARGS__)} *__out = (void *)&(output);\
+	FOREACH_ITEM_IN_JSON(src,__name,__value){\
+		if (0){}\
+			MAP_2ARG(__struct_json___SINGLE_ATTRIBUTE_OF_JSON, __VA_ARGS__)\
+    }\
 }
 
-#define ENCODE_STRUCT_AS_JSON(source,type,dest,...) {\
+#define GET_ATTRIBUTE_FROM_JSON(src,output,attr,json_type) {\
+	struct {__struct_json___LIST_ATTRIBUTE(attr,json_type)} *__out = (void *)&(output);\
+	FOREACH_ITEM_IN_JSON(src,__name,__value){\
+			if (0){}\
+			__struct_json___SINGLE_ATTRIBUTE_OF_JSON(attr,json_type)\
+	}\
+}
+
+#define CREATE_JSON_FROM_STRUCT(source,type,dest,...) {\
 	char *__dst;\
 	char *__buf;\
 	type *__src = &(source);\
