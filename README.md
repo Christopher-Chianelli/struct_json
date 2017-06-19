@@ -26,7 +26,7 @@ CREATE_JSON_FROM_STRUCT(struct,typeof(struct),out,(attribute,type)...)
 ### JSON to Struct, containing attributes status (an int) and msg (a string)
 ```
 char *json = "{\"status\":200,\"msg\":\"OK\"}";
-CREATE_STRUCT_FROM_JSON(json,,out,status,int,msg,string)
+CREATE_STRUCT_FROM_JSON(json,out,status,int,msg,string)
 ```
 
 ### Struct to JSON, containing attributes status (an int) and msg (a string)
